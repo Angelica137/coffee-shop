@@ -14,7 +14,8 @@ import { AuthService } from './services/auth.service';
 
 import { HttpClientModule } from '@angular/common/http';
 
-import { from } from 'rxjs';
+import { environment } from '../environments/environment';
+import { JwtHelperService, JWT_OPTIONS } from '@auth0/angular-jwt';
 
 @NgModule({
   declarations: [AppComponent],
@@ -23,14 +24,16 @@ import { from } from 'rxjs';
     BrowserModule,
     IonicModule.forRoot(),
     HttpClientModule,
-    AppRoutingModule
+    AppRoutingModule,
   ],
   providers: [
     StatusBar,
     SplashScreen,
     AuthService,
     DrinksService,
-    { provide: RouteReuseStrategy, useClass: IonicRouteStrategy }
+    { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
+    { provide: JWT_OPTIONS, useValue: JWT_OPTIONS },
+    JwtHelperService
   ],
   bootstrap: [AppComponent]
 })

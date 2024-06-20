@@ -83,12 +83,12 @@ export class DrinksService {
   constructor(private auth: AuthService, private http: HttpClient) { }
 
   getHeaders() {
-    const header = {
-      headers: new HttpHeaders()
-        .set('Authorization',  `Bearer ${this.auth.activeJWT()}`)
-    };
-    return header;
-  }
+		const header = {
+			headers: new HttpHeaders()
+				.set('Authorization',  `Bearer ${this.auth.activeJWT}`)
+		};
+		return header;
+	}
 
   getDrinks() {
     if (this.auth.can('get:drinks-detail')) {
