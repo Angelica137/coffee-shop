@@ -1,22 +1,17 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>user-page</ion-title>
+    <ion-title>User Page</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
+<ion-content class="ion-padding">
   <ng-container *ngIf="auth.isAuthenticated$ | async; else loggedOut">
-    <ion-button (click)="auth.logout()">Log Out</ion-button>
-    <ion-item>
-      <ion-label>Active JWT</ion-label>
-      <ion-textarea
-        [ngModel]="activeJWT$ | async"
-        name="Active JWT"
-      ></ion-textarea>
-    </ion-item>
+    <h2>Welcome!</h2>
+    <ion-button (click)="logout()">Log Out</ion-button>
   </ng-container>
 
   <ng-template #loggedOut>
-    <ion-button (click)="auth.login()">Log In</ion-button>
+    <h2>Please log in</h2>
+    <ion-button (click)="login()">Log In</ion-button>
   </ng-template>
 </ion-content>

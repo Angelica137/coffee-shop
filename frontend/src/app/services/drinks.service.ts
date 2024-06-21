@@ -1,11 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { map, mergeMap } from 'rxjs/operators';
 
 import { AuthService } from './auth.service';
 import { environment } from 'src/environments/environment';
-
-import { Observable, of } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
 
 export interface Drink {
   id: number;
@@ -86,61 +85,49 @@ export class DrinksService {
   constructor(private auth: AuthService, private http: HttpClient) { }
 
   getHeaders(): Observable<{ headers: HttpHeaders }> {
-		return this.auth.getActiveJWT().pipe(
-			switchMap((token: string) => {
-				const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
-				return of({ headers });
-			})
-		);
-	}
+    return this.auth.getActiveJWT().pipe(
+      map((token) => ({ headers: new HttpHeaders().set('Authorization', `Bearer ${token}`) }))
+    );
+  }
 
   getDrinks() {
-		this.getHeaders().subscribe(headers => {
-			if (this.auth.can('get:drinks-detail')) {
-				this.http.get(this.url + '/drinks-detail', headers)
-					.subscribe((res: any) => {
-						this.drinksToItems(res.drinks);
-						console.log(res);
-					});
-			} else {
-				this.http.get(this.url + '/drinks', headers)
-					.subscribe((res: any) => {
-						this.drinksToItems(res.drinks);
-						console.log(res);
-					});
-			}
-		});
-	}
+    this.auth.can('get:drinks-detail').pipe(
+      mergeMap(can => {
+        const url = can ? this.url + '/drinks-detail' : this.url + '/drinks';
+        return this.getHeaders().pipe(
+          mergeMap(headers => this.http.get(url, headers))
+        );
+      })
+    ).subscribe((res: any) => {
+      this.drinksToItems(res.drinks);
+      console.log(res);
+    });
+  }
 
   saveDrink(drink: Drink) {
-		this.getHeaders().subscribe(headers => {
-			if (drink.id >= 0) { // patch
-				this.http.patch(this.url + '/drinks/' + drink.id, drink, headers)
-					.subscribe((res: any) => {
-						if (res.success) {
-							this.drinksToItems(res.drinks);
-						}
-					});
-			} else { // insert
-				this.http.post(this.url + '/drinks', drink, headers)
-					.subscribe((res: any) => {
-						if (res.success) {
-							this.drinksToItems(res.drinks);
-						}
-					});
-			}
-		});
-	}
-	
-	deleteDrink(drink: Drink) {
-		this.getHeaders().subscribe(headers => {
-			delete this.items[drink.id];
-			this.http.delete(this.url + '/drinks/' + drink.id, headers)
-				.subscribe((res: any) => {
-					// Handle response if needed
-				});
-		});
-	}
+    this.getHeaders().pipe(
+      mergeMap(headers => {
+        if (drink.id >= 0) { // patch
+          return this.http.patch(this.url + '/drinks/' + drink.id, drink, headers);
+        } else { // insert
+          return this.http.post(this.url + '/drinks', drink, headers);
+        }
+      })
+    ).subscribe((res: any) => {
+      if (res.success) {
+        this.drinksToItems(res.drinks);
+      }
+    });
+  }
+
+  deleteDrink(drink: Drink) {
+    delete this.items[drink.id];
+    this.getHeaders().pipe(
+      mergeMap(headers => this.http.delete(this.url + '/drinks/' + drink.id, headers))
+    ).subscribe((res: any) => {
+      // Handle response if needed
+    });
+  }
 
   drinksToItems( drinks: Array<Drink>) {
     for (const drink of drinks) {
