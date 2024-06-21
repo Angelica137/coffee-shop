@@ -19,6 +19,10 @@ export class AppComponent {
     this.initializeApp();
   }
 
+	ngOnInit() {
+    this.auth.handleRedirectCallback();
+  }
+
   initializeApp() {
     this.platform.ready().then(() => {
       this.statusBar.styleDefault();

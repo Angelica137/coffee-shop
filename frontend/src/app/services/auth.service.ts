@@ -6,9 +6,6 @@ import { tap, catchError, concatMap, shareReplay } from 'rxjs/operators';
 
 import { environment } from '../../environments/environment';
 
-const JWTS_LOCAL_KEY = 'JWTS_LOCAL_KEY';
-const JWTS_ACTIVE_INDEX_KEY = 'JWTS_ACTIVE_INDEX_KEY';
-
 @Injectable({
   providedIn: 'root'
 })
@@ -21,7 +18,6 @@ export class AuthService {
   clientId = environment.auth0.clientId;
   callbackURL = environment.auth0.authorizationParams.redirect_uri;
 
-  // New Auth0 client observable
   auth0Client$ = (from(
     createAuth0Client({
       domain: this.url,
@@ -34,7 +30,6 @@ export class AuthService {
     catchError(err => throwError(err))
   );
 
-  // Define observables for SDK methods that return promises by default
   isAuthenticated$ = this.auth0Client$.pipe(
     concatMap((client: Auth0Client) => from(client.isAuthenticated()))
   );
@@ -103,13 +98,36 @@ export class AuthService {
     return this._idToken;
   }
 
-  build_login_link(callbackPath = '') {
-    const redirectUri = this.callbackURL + callbackPath;
-    const responseType = 'token id_token';
-    const scope = 'openid profile email';
+	private generateNonce(): string {
+		return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+	}
 
-    return `https://${this.url}/authorize?audience=${this.audience}&response_type=${responseType}&client_id=${this.clientId}&redirect_uri=${redirectUri}&scope=${scope}`;
+  build_login_link(callbackPath = '') {
+		const redirectUri = this.callbackURL + callbackPath;
+		const responseType = 'token id_token';
+		const scope = 'openid profile email';
+		const nonce = this.generateNonce();
+	
+		// Store the nonce in localStorage so we can verify it later
+		localStorage.setItem('auth_nonce', nonce);
+	
+		return `https://${this.url}/authorize?audience=${this.audience}&response_type=${responseType}&client_id=${this.clientId}&redirect_uri=${redirectUri}&scope=${scope}&nonce=${nonce}`;
   }
+
+	verifyNonce(idToken: string): boolean {
+		const payload = this.jwtHelper.decodeToken(idToken);
+		const storedNonce = localStorage.getItem('auth_nonce');
+		const tokenNonce = payload.nonce;
+	
+		if (tokenNonce !== storedNonce) {
+			throw new Error('Invalid nonce!');
+		}
+	
+		// Clear the stored nonce
+		localStorage.removeItem('auth_nonce');
+	
+		return true;
+	}
 
   decodeToken(token: string) {
     this._payload = this.jwtHelper.decodeToken(token);
@@ -128,26 +146,22 @@ export class AuthService {
   }
 
   load_jwts() {
-    this.token = localStorage.getItem(JWTS_LOCAL_KEY) || null;
+    this.token = localStorage.getItem('JWTS_LOCAL_KEY') || null;
     if (this.token) {
       this.decodeToken(this.token);
     }
   }
 
   check_token_fragment() {
-    // parse the fragment
     const fragment = window.location.hash.substr(1).split('&')[0].split('=');
-    // check if the fragment includes the access token
     if (fragment[0] === 'access_token') {
-      // add the access token to the jwt
       this.token = fragment[1];
-      // save jwts to localstore
       this.set_jwt();
     }
   }
 
   set_jwt() {
-    localStorage.setItem(JWTS_LOCAL_KEY, this.token);
+    localStorage.setItem('JWTS_LOCAL_KEY', this.token);
     if (this.token) {
       this.decodeToken(this.token);
     }
@@ -176,4 +190,15 @@ export class AuthService {
     const client = await this.auth0Client$.toPromise();
     await client.loginWithRedirect();
   }
+
+	setTokens(accessToken: string, idToken: string) {
+		if (this.verifyNonce(idToken)) {
+			this._accessToken = accessToken;
+			this._idToken = idToken;
+			this.decodeToken(this._idToken);
+		} else {
+			// Handle the error - the nonce didn't match
+			console.error('Nonce verification failed');
+		}
+	}
 }

@@ -17,8 +17,11 @@ import { HttpClientModule } from '@angular/common/http';
 import { environment } from '../environments/environment';
 import { JwtHelperService, JWT_OPTIONS } from '@auth0/angular-jwt';
 
+import { AuthButtonComponent } from '../app/components/auth-button.component';
+
+
 @NgModule({
-  declarations: [AppComponent],
+  declarations: [AppComponent, AuthButtonComponent],
   entryComponents: [],
   imports: [
     BrowserModule,

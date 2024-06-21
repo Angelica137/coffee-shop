@@ -9,7 +9,7 @@ export const environment = {
     domain: 'dev-q2zjnanpz8egzzkb.us.auth0.com',
     clientId: 'woYvvUVGkhWRF7esuD4oOOyYRcib5iR8',
     authorizationParams: {
-      redirect_uri: 'http://localhost:8100/tabs/drink-menu',
+      redirect_uri: 'http://localhost:8100',
       audience: '', // the audience set for the auth0 app
     }
   }
