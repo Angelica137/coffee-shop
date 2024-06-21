@@ -18,10 +18,14 @@ import { environment } from '../environments/environment';
 import { JwtHelperService, JWT_OPTIONS } from '@auth0/angular-jwt';
 
 import { AuthButtonComponent } from '../app/components/auth-button.component';
+import { AuthCallbackComponent } from '../app/components/auth-callback.component';
 
 
 @NgModule({
-  declarations: [AppComponent, AuthButtonComponent],
+  declarations: [
+		AppComponent,
+		AuthButtonComponent,
+		AuthCallbackComponent],
   entryComponents: [],
   imports: [
     BrowserModule,

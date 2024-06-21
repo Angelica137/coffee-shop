@@ -16,4 +16,8 @@ export class UserPagePage implements OnInit {
   ngOnInit() {
   }
 
+	login() {
+		this.auth.login();
+	}
+
 }
