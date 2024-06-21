@@ -1,36 +1,21 @@
-import { Component } from '@angular/core';
-
-import { Platform } from '@ionic/angular';
-import { SplashScreen } from '@ionic-native/splash-screen/ngx';
-import { StatusBar } from '@ionic-native/status-bar/ngx';
+import { Component, OnInit } from '@angular/core';
 import { AuthService } from './services/auth.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   templateUrl: 'app.component.html'
 })
-export class AppComponent {
-  constructor(
-    private auth: AuthService,
-    private platform: Platform,
-    private splashScreen: SplashScreen,
-    private statusBar: StatusBar
-  ) {
-    this.initializeApp();
-  }
+export class AppComponent implements OnInit {
+  constructor(private auth: AuthService, private router: Router) {}
 
-	ngOnInit() {
-    this.auth.handleRedirectCallback();
-  }
-
-  initializeApp() {
-    this.platform.ready().then(() => {
-      this.statusBar.styleDefault();
-      this.splashScreen.hide();
-
-      // Perform required auth actions
-      this.auth.load_jwts();
-      this.auth.check_token_fragment();
-    });
+  ngOnInit() {
+    const params = window.location.search;
+    if (params.includes('code=') && params.includes('state=')) {
+      this.auth.handleRedirectCallback().subscribe({
+        next: () => this.router.navigate(['/tabs/user-page']),
+        error: (error) => console.error(error)
+      });
+    }
   }
 }

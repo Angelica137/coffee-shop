@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { DrinksService, Drink } from '../../services/drinks.service';
+import { DrinksService } from '../../services/drinks.service';
 import { ModalController } from '@ionic/angular';
 import { DrinkFormComponent } from './drink-form/drink-form.component';
 import { AuthService } from 'src/app/services/auth.service';
@@ -22,7 +22,7 @@ export class DrinkMenuPage implements OnInit {
     this.drinks.getDrinks();
   }
 
-  async openForm(activedrink: Drink = null) {
+  async openForm(activedrink: any = null) {
     if (!this.auth.can('get:drinks-detail')) {
       return;
     }
@@ -34,5 +34,4 @@ export class DrinkMenuPage implements OnInit {
 
     modal.present();
   }
-
 }
