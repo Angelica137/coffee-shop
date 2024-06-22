@@ -7,6 +7,7 @@ import { AuthService } from '../../services/auth.service';
   styleUrls: ['./user-page.page.scss'],
 })
 export class UserPagePage {
+	userJwt: string = '';
   constructor(public auth: AuthService) {}
 
   login() {
@@ -15,5 +16,6 @@ export class UserPagePage {
 
   logout() {
     this.auth.logout();
+    this.userJwt = '';
   }
 }

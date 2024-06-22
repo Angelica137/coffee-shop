@@ -90,19 +90,9 @@ export class DrinksService {
     );
   }
 
-  getDrinks() {
-    this.auth.can('get:drinks-detail').pipe(
-      mergeMap(can => {
-        const url = can ? this.url + '/drinks-detail' : this.url + '/drinks';
-        return this.getHeaders().pipe(
-          mergeMap(headers => this.http.get(url, headers))
-        );
-      })
-    ).subscribe((res: any) => {
-      this.drinksToItems(res.drinks);
-      console.log(res);
-    });
-  }
+	getDrinks() {
+		return this.http.get(`${this.url}/drinks`);
+	}
 
   saveDrink(drink: Drink) {
     this.getHeaders().pipe(

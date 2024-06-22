@@ -29,8 +29,6 @@ export class AuthService {
   }
 
 
-
-
   private async checkAuth() {
     const client = await this.auth0Client$.toPromise();
     if (client) {

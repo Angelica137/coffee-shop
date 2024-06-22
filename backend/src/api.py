@@ -9,7 +9,7 @@ from .auth.auth import AuthError, requires_auth
 
 app = Flask(__name__)
 setup_db(app)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 '''
 @TODO uncomment the following line to initialize the datbase
@@ -17,7 +17,8 @@ CORS(app)
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 !! Running this funciton will add one
 '''
-# db_drop_and_create_all()
+with app.app_context():
+    db_drop_and_create_all()
 
 # ROUTES
 '''
@@ -25,9 +26,27 @@ CORS(app)
     GET /drinks
         it should be a public endpoint
         it should contain only the drink.short() data representation
-    returns status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
+        returns status code 200 and json {"success": True, "drinks": drinks}
+        where drinks is the list of drinks
         or appropriate status code indicating reason for failure
 '''
+
+
+@app.route('/drinks', methods=['GET'])
+def get_drinks():
+    app.logger.info("Received request for /drinks")
+    try:
+        print("Received request for /drinks")
+        drinks = Drink.query.all()
+        formatted_drinks = [drink.short() for drink in drinks]
+        print(f"Drinks found: {formatted_drinks}")
+        return jsonify({
+            'success': True,
+            'drinks': formatted_drinks
+        }), 200
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        abort(500)
 
 
 '''
@@ -112,3 +131,6 @@ def unprocessable(error):
 @TODO implement error handler for AuthError
     error handler should conform to general task above
 '''
+
+if __name__ == '__main__':
+    app.run(debug=True)
