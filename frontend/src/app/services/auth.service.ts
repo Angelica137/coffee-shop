@@ -23,9 +23,19 @@ export class AuthService {
   isAuthenticated$ = new BehaviorSubject<boolean>(false);
 
 	private token: string = '';
+	private auth0Client: Auth0Client;
 
-	constructor(private http: HttpClient) {
-    this.checkAuth();
+  constructor() {
+    this.auth0Client$.subscribe(client => {
+      this.auth0Client = client;  // THIS IS NEW!!!
+      client.getIdTokenClaims().then(claims => {
+        this.token = claims.__raw;
+      });
+    });
+  }
+
+	getToken(): string {
+    return this.token;
   }
 
   private async checkAuth() {
@@ -40,8 +50,16 @@ export class AuthService {
     }
   }
 
-	getToken(): string {
-    return this.token;
+
+	can(permission: string): Observable<boolean> {
+    return this.auth0Client$.pipe(
+      take(1),
+      switchMap(client => from(client.getUser())),
+      map(user => {
+        const permissions: string[] = user ? user['permissions'] : [];
+        return permissions.includes(permission);
+      })
+    );
   }
 
   login() {
@@ -93,14 +111,5 @@ export class AuthService {
     );
   }
 
-  can(permission: string): Observable<boolean> {
-    return this.auth0Client$.pipe(
-      take(1),
-      switchMap(client => from(client.getUser())),
-      map(user => {
-        const permissions: string[] = user ? user['permissions'] : [];
-        return permissions.includes(permission);
-      })
-    );
-  }
+  
 }
