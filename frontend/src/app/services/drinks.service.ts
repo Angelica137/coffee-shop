@@ -97,15 +97,12 @@ export class DrinksService {
 	getDrinkDetails(): Observable<any> {
 		return this.auth.getTokenSilently().pipe(
 			mergeMap(token => {
-				console.log('Token received:', token);
 				const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
-				return this.http.get(`${this.url}/drinks-detail`, { headers }).pipe(
-					tap(response => console.log('Drink details response:', response)),
-					catchError(error => {
-						console.error('Error fetching drink details:', error);
-						return throwError(error);
-					})
-				);
+				return this.http.get(`${this.url}/drinks-detail`, { headers });
+			}),
+			catchError(error => {
+				console.error('Error fetching drink details:', error);
+				return throwError(error);
 			})
 		);
 	}
