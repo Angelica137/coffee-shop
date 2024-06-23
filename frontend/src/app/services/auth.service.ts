@@ -38,18 +38,6 @@ export class AuthService {
     return this.token;
   }
 
-  private async checkAuth() {
-    const client = await this.auth0Client$.toPromise();
-    if (client) {
-      const isAuthenticated = await client.isAuthenticated();
-      this.isAuthenticated$.next(isAuthenticated);
-      if (isAuthenticated) {
-        const token = await client.getTokenSilently();
-        this.token = token;
-      }
-    }
-  }
-
 	can(permission: string): Observable<boolean> {
 		return this.auth0Client$.pipe(
 			take(1),
@@ -70,6 +58,18 @@ export class AuthService {
 			})
 		);
 	}
+
+  private async checkAuth() {
+    const client = await this.auth0Client$.toPromise();
+    if (client) {
+      const isAuthenticated = await client.isAuthenticated();
+      this.isAuthenticated$.next(isAuthenticated);
+      if (isAuthenticated) {
+        const token = await client.getTokenSilently();
+        this.token = token;
+      }
+    }
+  }
 
   login() {
     this.auth0Client$.pipe(
