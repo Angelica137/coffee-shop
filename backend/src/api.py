@@ -61,15 +61,16 @@ def get_drinks():
 @requires_auth('get:drinks-detail')
 def get_drinks_details(payload):
     try:
+        print(f"Payload received: {payload}")
         drinks = Drink.query.all()
         formatted_drinks = [drink.long() for drink in drinks]
-
+        print(f"Formatted drinks: {formatted_drinks}")
         return jsonify({
             'success': True,
             'drinks': formatted_drinks
         }), 200
     except Exception as e:
-        print(f"An error occured: {e}")
+        print(f"An error occurred: {e}")
         abort(500)
 
 

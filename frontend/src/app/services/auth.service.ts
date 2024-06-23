@@ -25,14 +25,22 @@ export class AuthService {
 	private token: string = '';
 	private auth0Client: Auth0Client;
 
-  constructor() {
-    this.auth0Client$.subscribe(client => {
-      this.auth0Client = client;  // THIS IS NEW!!!
-      client.getIdTokenClaims().then(claims => {
-        this.token = claims.__raw;
-      });
-    });
-  }
+  constructor(private http: HttpClient) {
+		this.auth0Client$.subscribe(client => {
+			this.auth0Client = client;
+			client.getIdTokenClaims().then(claims => {
+				if (claims) {
+					this.token = claims.__raw;
+					console.log('ID Token Claims:', claims);
+					console.log('Permissions:', claims['permissions'] || []);
+				} else {
+					console.error('No claims found');
+				}
+			}).catch(error => {
+				console.error('Error getting ID token claims:', error);
+			});
+		});
+	}
 
 	getToken(): string {
     return this.token;
@@ -43,13 +51,13 @@ export class AuthService {
 			take(1),
 			switchMap(client => from(client.getIdTokenClaims())),
 			map(claims => {
-				console.log('ID Token Claims:', claims);
 				if (!claims) {
 					console.error('No claims found');
 					return false;
 				}
 				const permissions = claims['permissions'] || [];
-				console.log('Permissions:', permissions);
+				console.log('Checking permission:', permission);
+				console.log('User permissions:', permissions);
 				return permissions.includes(permission);
 			}),
 			catchError(err => {

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, map, mergeMap } from 'rxjs/operators';
+import { catchError, map, mergeMap, tap } from 'rxjs/operators';
 
 import { AuthService } from './auth.service';
 import { environment } from 'src/environments/environment';
@@ -95,17 +95,20 @@ export class DrinksService {
 	}
 
 	getDrinkDetails(): Observable<any> {
-    return this.auth.getTokenSilently().pipe(
-        mergeMap(token => {
-            const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
-            return this.http.get(`${this.url}/drinks-detail`, { headers });
-        }),
-        catchError(error => {
-            console.error('Error fetching drink details:', error);
-            return throwError(error);
-        })
-    );
-}
+		return this.auth.getTokenSilently().pipe(
+			mergeMap(token => {
+				console.log('Token received:', token);
+				const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+				return this.http.get(`${this.url}/drinks-detail`, { headers }).pipe(
+					tap(response => console.log('Drink details response:', response)),
+					catchError(error => {
+						console.error('Error fetching drink details:', error);
+						return throwError(error);
+					})
+				);
+			})
+		);
+	}
 
   saveDrink(drink: Drink) {
     this.getHeaders().pipe(
