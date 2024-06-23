@@ -3,6 +3,7 @@ import createAuth0Client, { Auth0Client, GetTokenSilentlyOptions } from '@auth0/
 import { BehaviorSubject, from, Observable, of, throwError } from 'rxjs';
 import { catchError, concatMap, tap, map, shareReplay, take, switchMap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 
 @Injectable({
@@ -21,20 +22,26 @@ export class AuthService {
 
   isAuthenticated$ = new BehaviorSubject<boolean>(false);
 
-  constructor() {
-    this.auth0Client$.pipe(
-      switchMap((client: Auth0Client) => from(client.isAuthenticated())),
-      tap(isAuthenticated => this.isAuthenticated$.next(isAuthenticated))
-    ).subscribe();
-  }
+	private token: string = '';
 
+	constructor(private http: HttpClient) {
+    this.checkAuth();
+  }
 
   private async checkAuth() {
     const client = await this.auth0Client$.toPromise();
     if (client) {
       const isAuthenticated = await client.isAuthenticated();
       this.isAuthenticated$.next(isAuthenticated);
+      if (isAuthenticated) {
+        const token = await client.getTokenSilently();
+        this.token = token;
+      }
     }
+  }
+
+	getToken(): string {
+    return this.token;
   }
 
   login() {
@@ -87,15 +94,13 @@ export class AuthService {
   }
 
   can(permission: string): Observable<boolean> {
-    return this.getUser$().pipe(
-      switchMap(user => {
-        if (!user) {
-          return of(false);
-        }
-        const permissions = user['https://your-domain.com/permissions'] || [];
-        return of(permissions.includes(permission));
-      }),
-      catchError(() => of(false))
+    return this.auth0Client$.pipe(
+      take(1),
+      switchMap(client => from(client.getUser())),
+      map(user => {
+        const permissions: string[] = user ? user['permissions'] : [];
+        return permissions.includes(permission);
+      })
     );
   }
 }
