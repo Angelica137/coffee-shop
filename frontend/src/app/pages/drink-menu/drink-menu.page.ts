@@ -37,16 +37,36 @@ export class DrinkMenuPage implements OnInit {
   }
 
   async openForm(activedrink: any = null) { 
-    const canOpen = await this.auth.can('get:drinks-detail').toPromise()
-    if (!canOpen) {
-        console.log('User does not have permission to view drink details');
-        return;
+		const canOpen = await this.auth.can('get:drinks-detail').toPromise()
+		if (!canOpen) {
+			console.log('User does not have permission to view drink details');
+			return;
 		}
-
-    const modal = await this.modalCtrl.create({
-      component: DrinkFormComponent,
-      componentProps: { drink: activedrink, isNew: !activedrink }
-    });
+	
+		if (activedrink) {
+			this.drinks.getDrinkDetails().subscribe(
+				(response: any) => {
+					console.log('Drink details:', response);
+					// Use the detailed drink information here
+					// For example, you might want to pass it to the modal
+					this.openModal(response.drinks);
+				},
+				(error) => {
+					console.error('Error fetching drink details:', error);
+					// Handle the error (e.g., show an error message to the user)
+				}
+			);
+		} else {
+			// If it's a new drink, just open the modal without fetching details
+			this.openModal();
+		}
+	}
+	
+	async openModal(drinkDetails?: any) {
+		const modal = await this.modalCtrl.create({
+			component: DrinkFormComponent,
+			componentProps: { drink: drinkDetails, isNew: !drinkDetails }
+		});
 
     modal.present();
 
