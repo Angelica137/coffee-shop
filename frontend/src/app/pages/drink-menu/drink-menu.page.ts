@@ -36,7 +36,15 @@ export class DrinkMenuPage implements OnInit {
     );
   }
 
-  async openForm(activedrink: any = null) { 
+  async openForm(activedrink: any = null) {
+		console.log('Checking authentication state');
+		const isAuthenticated = this.auth.isAuthenticated$.getValue();
+		if (!isAuthenticated) {
+			console.log('User is not authenticated');
+			// Handle unauthenticated state (e.g., redirect to login)
+			return;
+		}
+	
 		console.log('Checking permission for get:drinks-detail');
 		const canOpen = await this.auth.can('get:drinks-detail').toPromise();
 		console.log('Can open?', canOpen);

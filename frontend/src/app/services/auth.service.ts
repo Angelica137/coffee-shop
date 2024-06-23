@@ -25,58 +25,59 @@ export class AuthService {
 	private token: string = '';
 	private auth0Client: Auth0Client;
 
-  constructor(private http: HttpClient) {
-		this.auth0Client$.subscribe(client => {
-			this.auth0Client = client;
-			client.getIdTokenClaims().then(claims => {
-				if (claims) {
-					this.token = claims.__raw;
-					console.log('ID Token Claims:', claims);
-					console.log('Permissions:', claims['permissions'] || []);
-				} else {
-					console.error('No claims found');
-				}
-			}).catch(error => {
-				console.error('Error getting ID token claims:', error);
-			});
-		});
-	}
+  constructor() {
+    this.auth0Client$.subscribe((client: Auth0Client) => {
+      this.auth0Client = client;
+      this.checkAuth();
+    });
+  }
 
 	getToken(): string {
     return this.token;
   }
 
 	can(permission: string): Observable<boolean> {
-		return this.auth0Client$.pipe(
-			take(1),
-			switchMap(client => from(client.getIdTokenClaims())),
-			map(claims => {
-				if (!claims) {
-					console.error('No claims found');
-					return false;
-				}
-				const permissions = claims['permissions'] || [];
-				console.log('Checking permission:', permission);
-				console.log('User permissions:', permissions);
-				return permissions.includes(permission);
-			}),
-			catchError(err => {
-				console.error('Error in can method:', err);
-				return of(false);
-			})
-		);
-	}
+    return this.getTokenClaims().pipe(
+      map(claims => {
+        if (!claims) {
+          console.error('No claims found');
+          return false;
+        }
+        const permissions = claims['permissions'] || [];
+        console.log('Checking permission:', permission);
+        console.log('User permissions:', permissions);
+        return permissions.includes(permission);
+      })
+    );
+  }
 
-  private async checkAuth() {
-    const client = await this.auth0Client$.toPromise();
-    if (client) {
-      const isAuthenticated = await client.isAuthenticated();
-      this.isAuthenticated$.next(isAuthenticated);
-      if (isAuthenticated) {
-        const token = await client.getTokenSilently();
-        this.token = token;
-      }
-    }
+  private checkAuth(): void {
+    this.auth0Client$.pipe(
+      switchMap((client: Auth0Client) => from(client.isAuthenticated())),
+      tap(isAuthenticated => {
+        this.isAuthenticated$.next(isAuthenticated);
+        console.log('Is authenticated:', isAuthenticated);
+        if (isAuthenticated) {
+          this.getTokenClaims().subscribe();
+        }
+      })
+    ).subscribe();
+  }
+
+	getTokenClaims(): Observable<any> {
+    return this.auth0Client$.pipe(
+      switchMap((client: Auth0Client) => from(client.getIdTokenClaims())),
+      tap(claims => {
+        console.log('Token claims:', claims);
+        if (claims) {
+          this.token = claims.__raw;
+        }
+      }),
+      catchError(error => {
+        console.error('Error getting token claims:', error);
+        return of(null);
+      })
+    );
   }
 
   login() {
