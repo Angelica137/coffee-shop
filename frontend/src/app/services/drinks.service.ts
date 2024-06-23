@@ -94,6 +94,15 @@ export class DrinksService {
 		return this.http.get(`${this.url}/drinks`);
 	}
 
+	getDrinkDetails(): Observable<any> {
+    return this.auth.getTokenSilently().pipe(
+      mergeMap(token => {
+        const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+        return this.http.get(`${this.url}/drinks-detail`, { headers });
+      })
+    );
+  }
+
   saveDrink(drink: Drink) {
     this.getHeaders().pipe(
       mergeMap(headers => {
