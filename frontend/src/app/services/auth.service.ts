@@ -37,19 +37,25 @@ export class AuthService {
   }
 
 	can(permission: string): Observable<boolean> {
-    return this.getTokenClaims().pipe(
-      map(claims => {
-        if (!claims) {
-          console.error('No claims found');
-          return false;
-        }
-        const permissions = claims['permissions'] || [];
-        console.log('Checking permission:', permission);
-        console.log('User permissions:', permissions);
-        return permissions.includes(permission);
-      })
-    );
-  }
+		return this.auth0Client$.pipe(
+			take(1),
+			switchMap(client => from(client.getIdTokenClaims())),
+			map(claims => {
+				console.log('ID Token Claims:', claims);
+				if (!claims) {
+					console.error('No claims found');
+					return false;
+				}
+				const permissions = claims['permissions'] || [];
+				console.log('Permissions:', permissions);
+				return permissions.includes(permission);
+			}),
+			catchError(err => {
+				console.error('Error in can method:', err);
+				return of(false);
+			})
+		);
+	}
 
   private checkAuth(): void {
     this.auth0Client$.pipe(
