@@ -36,15 +36,7 @@ export class DrinkMenuPage implements OnInit {
     );
   }
 
-  async openForm(activedrink: any = null) {
-		console.log('Checking authentication state');
-		const isAuthenticated = this.auth.isAuthenticated$.getValue();
-		if (!isAuthenticated) {
-			console.log('User is not authenticated');
-			// Handle unauthenticated state (e.g., redirect to login)
-			return;
-		}
-	
+  async openForm(activedrink: any = null) { 
 		console.log('Checking permission for get:drinks-detail');
 		const canOpen = await this.auth.can('get:drinks-detail').toPromise();
 		console.log('Can open?', canOpen);
@@ -53,22 +45,16 @@ export class DrinkMenuPage implements OnInit {
 			return;
 		}
 	
-		if (activedrink) {
-			this.drinks.getDrinkDetails().subscribe(
-				(response: any) => {
-					console.log('Drink details:', response);
-					// Use the detailed drink information here
-					// For example, you might want to pass it to the modal
-					this.openModal(response.drinks);
-				},
-				(error) => {
-					console.error('Error fetching drink details:', error);
-					// Handle the error (e.g., show an error message to the user)
-				}
-			);
-		} else {
-			// If it's a new drink, just open the modal without fetching details
-			this.openModal();
+		const modal = await this.modalCtrl.create({
+			component: DrinkFormComponent,
+			componentProps: { drink: activedrink, isNew: !activedrink }
+		});
+	
+		modal.present();
+	
+		const { data } = await modal.onWillDismiss();
+		if (data) {
+			this.loadDrinks();
 		}
 	}
 	
