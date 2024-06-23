@@ -38,7 +38,7 @@ export class DrinkMenuPage implements OnInit {
 
   async openForm(activedrink: any = null) { 
     const canOpen = await this.auth.can('get:drinks-detail').toPromise()
-if (!canOpen) {
+    if (!canOpen) {
         console.log('User does not have permission to view drink details');
         return;
 		}
