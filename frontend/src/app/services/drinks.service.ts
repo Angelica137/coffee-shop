@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map, mergeMap } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { catchError, map, mergeMap } from 'rxjs/operators';
 
 import { AuthService } from './auth.service';
 import { environment } from 'src/environments/environment';
@@ -96,12 +96,16 @@ export class DrinksService {
 
 	getDrinkDetails(): Observable<any> {
     return this.auth.getTokenSilently().pipe(
-      mergeMap(token => {
-        const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
-        return this.http.get(`${this.url}/drinks-detail`, { headers });
-      })
+        mergeMap(token => {
+            const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+            return this.http.get(`${this.url}/drinks-detail`, { headers });
+        }),
+        catchError(error => {
+            console.error('Error fetching drink details:', error);
+            return throwError(error);
+        })
     );
-  }
+}
 
   saveDrink(drink: Drink) {
     this.getHeaders().pipe(
