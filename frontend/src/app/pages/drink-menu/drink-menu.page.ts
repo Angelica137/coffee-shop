@@ -36,8 +36,13 @@ export class DrinkMenuPage implements OnInit {
     );
   }
 
-  async openForm(activedrink: any = null) {  // Changed Drink to any to match your existing code
-    // Remove permission checks for viewing drinks, as it should be public
+  async openForm(activedrink: any = null) { 
+    const canOpen = await this.auth.can('get:drinks-detail').toPromise()
+if (!canOpen) {
+        console.log('User does not have permission to view drink details');
+        return;
+		}
+
     const modal = await this.modalCtrl.create({
       component: DrinkFormComponent,
       componentProps: { drink: activedrink, isNew: !activedrink }

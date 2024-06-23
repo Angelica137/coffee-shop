@@ -46,11 +46,25 @@ export class DrinkFormComponent implements OnInit {
   }
 
   saveClicked() {
-    this.drinkService.saveDrink(this.drink);
-    this.closeModal();
+		this.auth.can('post:drinks').subscribe(canSave => {
+			if (canSave) {
+				this.drinkService.saveDrink(this.drink);
+				this.closeModal();
+			} else {
+				console.log('User does not have permission to save drinks')
+			}
+		});
   }
 
   deleteClicked() {
+		this.auth.can('delete:drinks').subscribe(canDelete => {
+			if (canDelete) {
+				this.drinkService.deleteDrink(this.drink);
+				this.closeModal();
+			} else {
+				console.log('User does not have permission to delete drinks');
+			}
+		})
     this.drinkService.deleteDrink(this.drink);
     this.closeModal();
   }

@@ -30,16 +30,18 @@ class AuthError(Exception):
         it should raise an AuthError if the header is malformed
     return the token part of the header
 '''
+
+
 def get_token_auth_header():
     """Obtains the Access Token from the Authorisation Header"""
     # Get teh authorisation header fomr the request
-    auth = request.headers.get('Authorisation', None)
+    auth = request.headers.get('Authorization', None)
 
     # raise an error if no header is present
     if not auth:
         raise AuthError({
-            'code': 'authorisation_header_missing',
-            'description': 'Authorisation header is expected'
+            'code': 'authorization_header_missing',
+            'description': 'Authorization header is expected'
         }, 401)
 
     parts = auth.split()
@@ -48,7 +50,7 @@ def get_token_auth_header():
     if parts[0].lower() != 'bearer':
         raise AuthError({
             'code': 'invalid_header',
-            'description': 'Authorisation header must start with "Bearer"'
+            'description': 'Authorization header must start with "Bearer"'
         }, 401)
     elif len(parts) == 1:
         raise AuthError({
@@ -58,7 +60,7 @@ def get_token_auth_header():
     elif len(parts) > 2:
         raise AuthError({
             'code': 'invalid_header',
-            'description': 'Authorisation header must be bearer token'
+            'description': 'Authorization header must be bearer token'
         }, 401)
 
     # return token as part of the header
@@ -84,8 +86,16 @@ def check_permissions(permission, payload):
     if 'permissions' not in payload:
         raise AuthError({
             'code': 'invalid_claims',
+            'description': 'Permission not included in Jwt.'
+        }, 400)
+
+    if permission not in payload['permissions']:
+        raise AuthError({
+            'code': 'unauthorised',
             'description': 'Permission not found.'
         }, 403)
+
+    return True
 
 
 '''
@@ -114,7 +124,7 @@ def verify_decode_jwt(token):
     if 'kid' not in unverified_header:
         raise AuthError({
             'code': 'invalid_header',
-            'description': 'Authorisation malformed'
+            'description': 'Authorization malformed'
         }, 401)
 
     for key in jwks['keys']:
