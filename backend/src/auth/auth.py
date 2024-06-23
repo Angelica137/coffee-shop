@@ -37,6 +37,7 @@ def get_token_auth_header():
     """Obtains the Access Token from the Authorisation Header"""
     # Get teh authorisation header fomr the request
     auth = request.headers.get('Authorization', None)
+    print(f"Authorisation headder: {auth}")
 
     # raise an error if no header is present
     if not auth:
