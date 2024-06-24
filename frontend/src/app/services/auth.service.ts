@@ -107,15 +107,23 @@ export class AuthService {
   }
 
   handleRedirectCallback(): Observable<void> {
-    return this.auth0Client$.pipe(
-      take(1),
-      switchMap(client => from(client.handleRedirectCallback())),
-      tap(() => {
-        this.isAuthenticated$.next(true);
-      }),
-      map(() => void 0)
-    );
-  }
+		return this.auth0Client$.pipe(
+			take(1),
+			switchMap((client: Auth0Client) => {
+				return from(client.handleRedirectCallback()).pipe(
+					tap(() => {
+						this.isAuthenticated$.next(true);
+					}),
+					catchError(error => {
+						console.error('Error handling redirect callback:', error);
+						this.isAuthenticated$.next(false);
+						return throwError(error);
+					}),
+					map(() => undefined) // Convert to void
+				);
+			})
+		);
+	}
 
   getTokenSilently(options?: GetTokenSilentlyOptions): Observable<string> {
     return this.auth0Client$.pipe(
