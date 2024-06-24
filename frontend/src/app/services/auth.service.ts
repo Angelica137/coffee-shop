@@ -87,14 +87,19 @@ export class AuthService {
   }
 
   login() {
-    this.auth0Client$.pipe(
-      take(1)
-    ).subscribe(client => {
-      client.loginWithRedirect({
-        redirect_uri: `${window.location.origin}/callback`,
-      });
-    });
-  }
+		this.auth0Client$.pipe(take(1)).subscribe((client: Auth0Client) => {
+			client.loginWithRedirect({
+				redirect_uri: `${window.location.origin}/callback`,
+				audience: environment.auth0.authorizationParams.audience,
+				scope: 'openid profile email',
+				state: this.generateRandomState()
+			});
+		});
+	}
+	
+	private generateRandomState(): string {
+		return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+	}
 
   logout() {
     this.auth0Client$.pipe(
@@ -110,16 +115,19 @@ export class AuthService {
 		return this.auth0Client$.pipe(
 			take(1),
 			switchMap((client: Auth0Client) => {
+				console.log('Handling redirect callback');
 				return from(client.handleRedirectCallback()).pipe(
-					tap(() => {
+					tap((redirectResult) => {
+						console.log('Redirect result:', redirectResult);
 						this.isAuthenticated$.next(true);
 					}),
 					catchError(error => {
 						console.error('Error handling redirect callback:', error);
+						console.error('Error details:', JSON.stringify(error, null, 2));
 						this.isAuthenticated$.next(false);
 						return throwError(error);
 					}),
-					map(() => undefined) // Convert to void
+					map(() => undefined)
 				);
 			})
 		);

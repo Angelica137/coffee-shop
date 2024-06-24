@@ -9,12 +9,16 @@ export class AuthCallbackComponent implements OnInit {
   constructor(private auth: AuthService, private router: Router) {}
 
   ngOnInit() {
-    this.auth.handleRedirectCallback().subscribe({
-      next: () => this.router.navigate(['/tabs/user-page']),
-      error: (err) => {
-        console.error('Error handling redirect callback:', err);
-        this.router.navigate(['/']);
-      }
-    });
-  }
+    this.auth.handleRedirectCallback().subscribe(
+			() => {
+				// Redirect to the intended page
+				this.router.navigate(['/tabs/user-page']);
+			},
+			error => {
+				console.error('Error handling redirect callback:', error);
+				// Redirect to user-page instead of login
+				this.router.navigate(['/tabs/user-page']);
+			}
+		);
+	}
 }

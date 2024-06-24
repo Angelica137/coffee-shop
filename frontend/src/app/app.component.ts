@@ -10,12 +10,20 @@ export class AppComponent implements OnInit {
   constructor(private auth: AuthService, private router: Router) {}
 
   ngOnInit() {
-    const params = window.location.search;
-    if (params.includes('code=') && params.includes('state=')) {
-      this.auth.handleRedirectCallback().subscribe({
-        next: () => this.router.navigate(['/tabs/user-page']),
-        error: (error) => console.error(error)
-      });
-    }
-  }
+		this.auth.isAuthenticated$.subscribe(
+			(isAuthenticated) => {
+				console.log('Is authenticated:', isAuthenticated);
+				if (isAuthenticated) {
+					this.auth.getUser$().subscribe(
+						(user) => {
+							console.log('User:', user);
+						},
+						(error) => {
+							console.error('Error getting user:', error);
+						}
+					);
+				}
+			}
+		);
+	}
 }
