@@ -10,7 +10,7 @@ export const environment = {
     clientId: 'woYvvUVGkhWRF7esuD4oOOyYRcib5iR8',
     authorizationParams: {
       redirect_uri: 'http://localhost:8100/callback',
-      audience: 'http://localhost:8100/tabs/drink-menu', // the audience set for the auth0 app
+      audience: 'https://coffeeshop-api', // the audience set for the auth0 app
     }
   }
 };

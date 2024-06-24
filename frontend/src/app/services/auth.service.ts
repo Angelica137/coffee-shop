@@ -37,17 +37,16 @@ export class AuthService {
   }
 
 	can(permission: string): Observable<boolean> {
-		return this.auth0Client$.pipe(
-			take(1),
-			switchMap(client => from(client.getIdTokenClaims())),
+		return this.getTokenClaims().pipe(
 			map(claims => {
-				console.log('ID Token Claims:', claims);
+				console.log('Full Token Claims:', JSON.stringify(claims, null, 2));
 				if (!claims) {
 					console.error('No claims found');
 					return false;
 				}
 				const permissions = claims['permissions'] || [];
 				console.log('Permissions:', permissions);
+				console.log('Checking for permission:', permission);
 				return permissions.includes(permission);
 			}),
 			catchError(err => {
@@ -71,27 +70,35 @@ export class AuthService {
   }
 
 	getTokenClaims(): Observable<any> {
-    return this.auth0Client$.pipe(
-      switchMap((client: Auth0Client) => from(client.getIdTokenClaims())),
-      tap(claims => {
-        console.log('Token claims:', claims);
-        if (claims) {
-          this.token = claims.__raw;
-        }
-      }),
-      catchError(error => {
-        console.error('Error getting token claims:', error);
-        return of(null);
-      })
-    );
-  }
+		return this.auth0Client$.pipe(
+			switchMap((client: Auth0Client) => from(client.getTokenSilently())),
+			switchMap(token => from(this.parseJwt(token))),
+			tap(claims => {
+				console.log('Token claims:', claims);
+				if (claims) {
+					this.token = claims.__raw;
+				}
+			}),
+			catchError(error => {
+				console.error('Error getting token claims:', error);
+				return of(null);
+			})
+		);
+	}
+	
+	private parseJwt(token: string): Promise<any> {
+		const base64Url = token.split('.')[1];
+		const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+		const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+		return Promise.resolve(JSON.parse(jsonPayload));
+	}
 
   login() {
 		this.auth0Client$.pipe(take(1)).subscribe((client: Auth0Client) => {
 			client.loginWithRedirect({
 				redirect_uri: `${window.location.origin}/callback`,
 				audience: environment.auth0.authorizationParams.audience,
-				scope: 'openid profile email',
+				scope: 'openid profile email get:drinks-detail',
 				state: this.generateRandomState()
 			});
 		});
@@ -150,6 +157,5 @@ export class AuthService {
       switchMap(client => from(client.getUser()))
     );
   }
-
   
 }
