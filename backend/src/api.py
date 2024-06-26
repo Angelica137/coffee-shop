@@ -1,18 +1,24 @@
+from dotenv import load_dotenv
 import os
 from flask import Flask, request, jsonify, abort
 from sqlalchemy import exc
 import json
 from flask_cors import CORS
 
-from .database.models import db_drop_and_create_all, setup_db, Drink
+from .database.models import db_drop_and_create_all, setup_db, Drink, db
 from .auth.auth import AuthError, requires_auth
+from sqlalchemy.exc import SQLAlchemyError
+
+
+load_dotenv()
+database_path = os.environ.get('DATABASE_URL')
 
 app = Flask(__name__)
 setup_db(app)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 '''
-@TODO uncomment the following line to initialize the datbase
+@DONE uncomment the following line to initialize the datbase
 !! NOTE THIS WILL DROP ALL RECORDS AND START YOUR DB FROM SCRATCH
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 !! Running this funciton will add one
@@ -32,22 +38,78 @@ with app.app_context():
 '''
 
 
-@app.route('/drinks', methods=['GET'])
-def get_drinks():
+@app.route('/drinks', methods=['GET', 'POST'])
+def drinks():
+    if request.method == 'GET':
+        try:
+            drinks = Drink.query.all()
+            formatted_drinks = [drink.short() for drink in drinks]
+            return jsonify({
+                'success': True,
+                'drinks': formatted_drinks
+            }), 200
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            abort(500)
+
+    elif request.method == 'POST':
+        return create_drink()
+
+@requires_auth('post:drinks')
+def create_drink(payload):
+    print("Inside create_drink function")
     try:
-        drinks = Drink.query.all()
-        formatted_drinks = [drink.short() for drink in drinks]
+        data = request.get_json()
+        print(f"Received data: {data}")
+
+        title = data.get('title')
+        recipe = data.get('recipe')
+
+        if title is None:
+            abort(
+                400,
+                description="Title must be provided (can be empty\
+                string)"
+                )
+
+        if not isinstance(recipe, list):
+            abort(400, description="Recipe must be a list")
+
+        if not isinstance(recipe, list):
+            abort(400, description="Recipe must be a list")
+
+        valid_recipe = [
+            ing for ing in recipe
+            if ing.get('name') or ing.get('color') != 'white' or ing.get('parts') != 1
+        ]
+
+        if not valid_recipe and recipe:
+            valid_recipe = [recipe[0]]
+
+        recipe_json = json.dumps(valid_recipe)
+
+        new_drink = Drink(title=title, recipe=recipe_json)
+
+        db.session.add(new_drink)
+        db.session.commit()
+
         return jsonify({
             'success': True,
-            'drinks': formatted_drinks
+            'drinks': [new_drink.long()]
         }), 200
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print(f'Database error occurred: {e}')
+        abort(500, description="An error occurred while creating the drink")
+
     except Exception as e:
-        print(f"An error occurred: {e}")
-        abort(500)
+        print(f'An error occurred: {e}')
+        abort(400, description=str(e))
 
 
 '''
-@TODO implement endpoint
+@DONE implement endpoint
     GET /drinks-detail
         it should require the 'get:drinks-detail' permission
         it should contain the drink.long() data representation
@@ -80,7 +142,8 @@ def get_drinks_details(payload):
         it should create a new row in the drinks table
         it should require the 'post:drinks' permission
         it should contain the drink.long() data representation
-    returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the newly created drink
+        returns status code 200 and json {"success": True, "drinks": drink}
+        where drink an array containing only the newly created drink
         or appropriate status code indicating reason for failure
 '''
 
@@ -93,7 +156,8 @@ def get_drinks_details(payload):
         it should update the corresponding row for <id>
         it should require the 'patch:drinks' permission
         it should contain the drink.long() data representation
-    returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the updated drink
+        returns status code 200 and json {"success": True, "drinks": drink}
+        where drink an array containing only the updated drink
         or appropriate status code indicating reason for failure
 '''
 
@@ -140,6 +204,8 @@ def unprocessable(error):
 @TODO implement error handler for 404
     error handler should conform to general task above
 '''
+
+
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({
@@ -154,11 +220,13 @@ def not_found(error):
     error handler should conform to general task above
 '''
 
+
 @app.errorhandler(AuthError)
 def handle_auth_error(ex):
     response = jsonify(ex.error)
     response.status_code = ex.status_code
     return response
+
 
 if __name__ == '__main__':
     app.run(debug=True)
