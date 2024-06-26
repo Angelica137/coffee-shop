@@ -28,7 +28,7 @@ with app.app_context():
 
 # ROUTES
 '''
-@TODO implement endpoint
+@DONE implement endpoint
     GET /drinks
         it should be a public endpoint
         it should contain only the drink.short() data representation
