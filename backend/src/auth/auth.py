@@ -108,7 +108,8 @@ def check_permissions(permission, payload):
         }, 400)
 
     if permission not in payload['permissions']:
-        print(f"Required permission '{permission}' not in payload permissions: {payload['permissions']}")
+        print(
+            f"Required permission '{permission}' not in payload permissions: {payload['permissions']}")
         raise AuthError({
             'code': 'unauthorized',
             'description': 'Permission not found.'
@@ -230,14 +231,14 @@ def requires_auth(permission=''):
             except Exception as e:
                 print(f"JWT verification failed: {e}")
                 abort(401)
-            
+
             try:
                 check_permissions(permission, payload)
                 print("Permission check passed")
             except Exception as e:
                 print(f"Permission check failed: {e}")
                 abort(403)
-            
+
             return f(payload, *args, **kwargs)
 
         return wrapper
