@@ -55,6 +55,7 @@ def drinks():
     elif request.method == 'POST':
         return create_drink()
 
+
 @requires_auth('post:drinks')
 def create_drink(payload):
     print("Inside create_drink function")
@@ -65,26 +66,25 @@ def create_drink(payload):
         title = data.get('title')
         recipe = data.get('recipe')
 
-        if title is None:
-            abort(
-                400,
-                description="Title must be provided (can be empty\
-                string)"
-                )
+        # Check if title is provided and not empty
+        if not title or title.strip() == '':
+            abort(400, description="Title must be provided and cannot be empty")
 
-        if not isinstance(recipe, list):
-            abort(400, description="Recipe must be a list")
+        # Check if recipe is a list and not empty
+        if not isinstance(recipe, list) or len(recipe) == 0:
+            abort(400, description="Recipe must be a non-empty list")
 
-        if not isinstance(recipe, list):
-            abort(400, description="Recipe must be a list")
+        # Validate each ingredient in the recipe
+        valid_recipe = []
+        for ing in recipe:
+            if not ing.get('name') or ing['name'].strip() == '':
+                abort(400, description="Each ingredient must have a non-empty name")
 
-        valid_recipe = [
-            ing for ing in recipe
-            if ing.get('name') or ing.get('color') != 'white' or ing.get('parts') != 1
-        ]
+            # Ensure other required fields are present
+            ing['color'] = ing.get('color', 'white')
+            ing['parts'] = ing.get('parts', 1)
 
-        if not valid_recipe and recipe:
-            valid_recipe = [recipe[0]]
+            valid_recipe.append(ing)
 
         recipe_json = json.dumps(valid_recipe)
 
@@ -137,7 +137,7 @@ def get_drinks_details(payload):
 
 
 '''
-@TODO implement endpoint
+@DONE implement endpoint
     POST /drinks
         it should create a new row in the drinks table
         it should require the 'post:drinks' permission
@@ -145,11 +145,13 @@ def get_drinks_details(payload):
         returns status code 200 and json {"success": True, "drinks": drink}
         where drink an array containing only the newly created drink
         or appropriate status code indicating reason for failure
+
+        Done in @app.route('/drinks')
 '''
 
 
 '''
-@TODO implement endpoint
+@DONE implement endpoint
     PATCH /drinks/<id>
         where <id> is the existing model id
         it should respond with a 404 error if <id> is not found
@@ -162,6 +164,37 @@ def get_drinks_details(payload):
 '''
 
 
+@app.route('/drinks/<int:id>', methods=['PATCH'])
+@requires_auth('patch:drinks')
+def update_drink(payload, id):
+    try:
+        drink = Drink.query.get(id)
+
+        if drink is None:
+            abort(404)
+
+        data = request.get_json()
+
+        if 'title' in data:
+            drink.title = data['title']
+
+        if 'recipe' in data:
+            drink.recipe = json.dumps(data['recipe'])
+
+        drink.update()
+
+        return jsonify({
+            "success": True,
+            "drinks": [drink.long()]
+        }), 200
+
+    except AuthError:
+        abort(401)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        abort(500)
+
+
 '''
 @TODO implement endpoint
     DELETE /drinks/<id>
@@ -172,6 +205,31 @@ def get_drinks_details(payload):
     returns status code 200 and json {"success": True, "delete": id} where id is the id of the deleted record
         or appropriate status code indicating reason for failure
 '''
+
+
+@app.route('/drinks/<int:id>', methods=['DELETE'])
+@requires_auth('delete:drinks')
+def delete_drink(payload, id):
+
+    try:
+        drink = Drink.query.get(id)
+
+        if drink is None:
+            abort(404)
+
+        drink.delete()
+
+        return jsonify({
+            "success": True,
+            "delete": id
+        }), 200
+
+    except AuthError:
+        abort(401)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        db.session.rollback()
+        abort(500)
 
 
 # Error Handling
@@ -190,15 +248,42 @@ def unprocessable(error):
 
 
 '''
-@TODO implement error handlers using the @app.errorhandler(error) decorator
+@DONE implement error handlers using the @app.errorhandler(error) decorator
     each error handler should return (with approprate messages):
-             jsonify({
-                    "success": False,
-                    "error": 404,
-                    "message": "resource not found"
-                    }), 404
-
+    jsonify({
+              "success": False,
+              "error": 404,
+              "message": "resource not found"
+              }), 404
 '''
+
+
+@app.errorhandler(401)
+def unauthorized(error):
+    return jsonify({
+        "success": False,
+        "error": 401,
+        "message": "Unauthorized"
+    }), 401
+
+
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({
+        "success": False,
+        "error": 404,
+        "message": "Resource not found"
+    }), 404
+
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    return jsonify({
+        "success": False,
+        "error": 500,
+        "message": "Internal server error"
+    }), 500
+
 
 '''
 @TODO implement error handler for 404
@@ -216,7 +301,7 @@ def not_found(error):
 
 
 '''
-@TODO implement error handler for AuthError
+@DONE implement error handler for AuthError
     error handler should conform to general task above
 '''
 
