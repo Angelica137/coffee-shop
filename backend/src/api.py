@@ -1,7 +1,6 @@
 from dotenv import load_dotenv
 import os
 from flask import Flask, request, jsonify, abort
-from sqlalchemy import exc
 import json
 from flask_cors import CORS
 
@@ -68,7 +67,8 @@ def create_drink(payload):
 
         # Check if title is provided and not empty
         if not title or title.strip() == '':
-            abort(400, description="Title must be provided and cannot be empty")
+            abort(400, description="Title must be provided and cannot be \
+                  empty")
 
         # Check if recipe is a list and not empty
         if not isinstance(recipe, list) or len(recipe) == 0:
@@ -78,7 +78,8 @@ def create_drink(payload):
         valid_recipe = []
         for ing in recipe:
             if not ing.get('name') or ing['name'].strip() == '':
-                abort(400, description="Each ingredient must have a non-empty name")
+                abort(400, description="Each ingredient must have a non-empty \
+                      name")
 
             # Ensure other required fields are present
             ing['color'] = ing.get('color', 'white')
@@ -196,14 +197,15 @@ def update_drink(payload, id):
 
 
 '''
-@TODO implement endpoint
+@DONE implement endpoint
     DELETE /drinks/<id>
         where <id> is the existing model id
         it should respond with a 404 error if <id> is not found
         it should delete the corresponding row for <id>
         it should require the 'delete:drinks' permission
-    returns status code 200 and json {"success": True, "delete": id} where id is the id of the deleted record
-        or appropriate status code indicating reason for failure
+        returns status code 200 and json {"success": True, "delete": id} where
+        id is the id of the deleted record or appropriate status code
+        indicating reason for failure
 '''
 
 
@@ -270,15 +272,6 @@ def unauthorized(error):
     }), 401
 
 
-@app.errorhandler(404)
-def not_found(error):
-    return jsonify({
-        "success": False,
-        "error": 404,
-        "message": "Resource not found"
-    }), 404
-
-
 @app.errorhandler(500)
 def internal_server_error(error):
     return jsonify({
@@ -299,7 +292,7 @@ def not_found(error):
     return jsonify({
         "success": False,
         "error": 404,
-        "message": "resource not found"
+        "message": "Resource not found"
     }), 404
 
 

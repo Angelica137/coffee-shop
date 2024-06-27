@@ -1,12 +1,10 @@
 import os
 from dotenv import load_dotenv
-from pathlib import Path
 import json
-from flask import request, _request_ctx_stack, abort
+from flask import request, abort
 from functools import wraps
 from jose import jwt
 from urllib.request import urlopen
-import json
 
 # Get the path to the .env file
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -109,7 +107,8 @@ def check_permissions(permission, payload):
 
     if permission not in payload['permissions']:
         print(
-            f"Required permission '{permission}' not in payload permissions: {payload['permissions']}")
+            f"Required permission '{permission}' not in payload permissions: \
+            {payload['permissions']}")
         raise AuthError({
             'code': 'unauthorized',
             'description': 'Permission not found.'
@@ -130,7 +129,8 @@ def check_permissions(permission, payload):
     it should validate the claims
     return the decoded payload
 
-    !!NOTE urlopen has a common certificate error described here: https://stackoverflow.com/questions/50236117/scraping-ssl-certificate-verify-failed-error-for-http-en-wikipedia-org
+    !!NOTE urlopen has a common certificate error described here:
+    https://stackoverflow.com/questions/50236117/scraping-ssl-certificate-verify-failed-error-for-http-en-wikipedia-org
 '''
 
 
@@ -183,13 +183,14 @@ def verify_decode_jwt(token):
                 'description': 'Token expired'
             }, 401)
 
-        except jwt.JWTClaimsError:
+        except jwt.JWTClaimsError as e:
             print(f"JWTClaimsError: {str(e)}")
             print(f"Expected audience: {API_AUDIENCE}")
             print(f"Expected issuer: https://{AUTH0_DOMAIN}/")
             raise AuthError({
                 'code': 'invalid_claims',
-                'description': 'Incorrect claims. Please, check the audience and issuer'
+                'description': 'Incorrect claims. Please, check the audience \
+                and issuer'
             }, 401)
         except Exception as e:
             print(f"Exception in token decoding: {str(e)}")
