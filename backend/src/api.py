@@ -210,14 +210,17 @@ def update_drink(payload, id):
 @app.route('/drinks/<int:id>', methods=['DELETE'])
 @requires_auth('delete:drinks')
 def delete_drink(payload, id):
-
+    print(f"Attempting to delete drink with id: {id}")
     try:
         drink = Drink.query.get(id)
 
         if drink is None:
+            print(f"Drink with id {id} not found")
             abort(404)
 
+        print(f"Deleting drink: {drink}")
         drink.delete()
+        print("Drink deleted successfully")
 
         return jsonify({
             "success": True,

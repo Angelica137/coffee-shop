@@ -65,7 +65,6 @@ export class DrinkFormComponent implements OnInit {
 				console.log('User does not have permission to delete drinks');
 			}
 		})
-    this.drinkService.deleteDrink(this.drink);
     this.closeModal();
   }
 }
